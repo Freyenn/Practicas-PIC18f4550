@@ -1,0 +1,24 @@
+NAMEREG s0,cont
+NAMEREG s1,num
+CONSTANT PE0,00 ;Puerto de entrada, dirección 0
+CONSTANT PS1,01 ;Puerto de Salida, dirección 1
+ADDRESS 000 ;Programs always start at reset vector 0
+BEGIN:
+; <<< your code here >>>
+input cont,PE0 ;Lee puerto entrada
+load num,cont
+and num,01
+jump z,next
+add cont,01
+next: add cont,02
+output cont,PS1
+call delay
+load num,cont
+xor num,FE
+jump Z,BEGIN
+JUMP next
+;*****************************************************
+delay: load num,FF
+resta: sub num,01
+jump NZ,resta
+return

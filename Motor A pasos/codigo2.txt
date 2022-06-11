@@ -1,0 +1,147 @@
+; TODO INSERT INCLUDE CODE HERE
+    List    P=18F4550		;Microcontrolador a utilizar	
+    #include <P18F4550.inc>	;Definiciones de constantes
+;*******************************************************************************
+	; TODO INSERT CONFIG CODE HERE USING CONFIG BITS GENERATOR
+;**********   Palabra de conficuración 	*******************************************
+	CONFIG FOSC = INTOSCIO_EC ;INTOSC_XT		;Internal oscillator
+	;CONFIG CPUDIV = OSC1_PLL2	;[Primary Oscillator Src: /1][96 MHz PLL Src: /2]                              
+	CONFIG PWRT= ON			; Power-up Timer Enable bit
+	CONFIG BOR= OFF			; Brown-out Reset disabled in hardware and software
+	CONFIG WDT= OFF			; WDT disabled
+	CONFIG MCLRE= ON		; MCLR pin enabled
+	CONFIG PBADEN= OFF		; PORTB<4:0> pins are configured as digital I/O
+	CONFIG LVP= OFF			; Single-Supply ICSP disabled
+	CONFIG DEBUG = OFF     		; Background debugger disabled
+	CONFIG XINST = OFF		; Extended Instruction disabled
+;**********************************************************************************
+; TODO PLACE VARIABLE DEFINITIONS GO HERE
+n	equ 0x00	; --> RAM[0]
+n2	equ 0x01	; --> RAM[1]
+pb	equ 0x02
+;**********************************************************************************
+	
+    org	    0x0000  ;la inst. que sigue 
+    movlw   0x62    ;W <- 0x62
+    movwf   OSCCON,A;Osc Interno, Fosc=4 MHz, A es el banco de acceso
+    movlw   0x0F    ; 
+    movwf   ADCON1  ; Todos los pines digitales
+    setf  TRISB,0	;PB entrada
+    clrf  PORTD,A   ;PD Inicializado en 0's/Limpiar PORTD 
+    clrf  TRISD	    ;PD salida
+    bcf	  INTCON2,RBPU	;Habilitar resistencias de Pull up
+    
+    
+APAGADO
+    
+    movlw   0x00
+    movwf   PORTD,A
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x00
+    cpfseq  pb,A
+    bra	    EVALUAR_A
+    bra	    APAGADO
+
+EVALUAR_A
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x00
+    cpfseq  pb,A
+    bra	    EVALUAR_B
+    bra	    APAGADO
+
+EVALUAR_B 
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x02
+    cpfseq  pb,A
+    bra	    EVALUAR_C
+    bra	    DERECHA
+    
+EVALUAR_C
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x01
+    cpfseq  pb,A
+    bra	    EVALUAR_D
+    bra	    IZQUIERDA
+
+EVALUAR_D 
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x03
+    cpfseq  pb,A
+    bra	    EVALUAR_D
+    bra	    APAGADO
+    
+IZQUIERDA
+    movlw   0x01  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x02  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x04  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x08  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x01
+    cpfseq  pb,A
+    bra	    EVALUAR_A
+    bra	    IZQUIERDA          
+    
+DERECHA
+    movlw   0x08  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x04  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x02  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movlw   0x01  ;
+    movwf   PORTD,A
+    call    RETARDO2
+    movf    PORTB,W	;Mover lo que contiene el puerto B a el registro W
+    andlw   0x03		;W <- W and 0x0F
+    movwf   pb,A
+    movlw   0x02
+    cpfseq  pb,A
+    bra	    EVALUAR_A
+    bra	    DERECHA   ;0x000C
+    
+RETARDO2
+    movlw   .109    ; 100 decimal
+    movwf   n2	    ; n <- 100  
+    
+RETARDO	    ;Rutina de Retardo de 100 us
+    ;			       (n-1)
+    ;  No CI = 2+1+1 + (1+1+2) * 99 + 1+2+2 = 405
+    movlw   .251    ; 100 decimal
+    movwf   n	    ; n <- 100
+CICLO2    
+    nop		    ; consume un CI
+    decfsz  n,1	    ;n <- n -1 y si n es cero salta la siguiente inst
+    bra	    CICLO2
+CICLO3    
+    nop		    ; consume un CI
+    decfsz  n2,1	    ;n <- n -1 y si n es cero salta la siguiente inst
+    bra	    RETARDO
+    nop
+    
+    return    
+    end
+ 
+
